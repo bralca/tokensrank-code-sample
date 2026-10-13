@@ -8,7 +8,7 @@
     "test": "pnpm run test:unit",
     "test:unit": "vitest run --passWithNoTests",
     "test:bats": "pnpm run test:posix",
-    "test:posix": "bats test/*.bats",
+    "test:posix": "pnpm --filter @tokensrank/shared build && bats test/*.bats",
     "test:privacy": "vitest run test/privacy.test.ts",
     "test:forbidden-keys": "bats test/forbidden-keys.bats",
     "test:pester": "pnpm run test:windows",

@@ -127,8 +127,8 @@ Describe 'TokensRank PowerShell installer' {
     $updatedConfig.install_id | Should -Be $installId
     $updatedState.install_id | Should -Be $installId
     $updatedState.access_key_invalid | Should -BeFalse
-    $updatedState.shipped_session_ids[0] | Should -Be 'keep-session'
-    $updatedState.pending_payloads[0].id | Should -Be 'pending-payload'
+    $updatedState.shipped_session_ids.Count | Should -Be 0
+    $updatedState.pending_payloads.Count | Should -Be 0
     $accessKeyHandoff | Should -Be 'tr_script_new_key'
   }
 

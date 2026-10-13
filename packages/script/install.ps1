@@ -48,10 +48,17 @@ function Set-UserOnlyAcl {
     [void]$acl.RemoveAccessRule($rule)
   }
 
+  # Only directories can propagate permissions to children; file ACLs reject
+  # inheritance flags. Both keep a protected, current-user-only access rule.
+  $inheritance = if ((Get-Item -LiteralPath $Path).PSIsContainer) {
+    [System.Security.AccessControl.InheritanceFlags]'ContainerInherit,ObjectInherit'
+  } else {
+    [System.Security.AccessControl.InheritanceFlags]::None
+  }
   $accessRule = [System.Security.AccessControl.FileSystemAccessRule]::new(
     $identity,
     'FullControl',
-    'ContainerInherit,ObjectInherit',
+    $inheritance,
     'None',
     'Allow'
   )

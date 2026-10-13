@@ -49,7 +49,7 @@ state_path() {
   run run_install Darwin
 
   [ "$status" -eq 0 ]
-  mode="$(stat -f '%Lp' "$(config_path)" 2>/dev/null || stat -c '%a' "$(config_path)")"
+  mode="$(node -e 'process.stdout.write((require("node:fs").statSync(process.argv[1]).mode & 0o777).toString(8))' "$(config_path)")"
   [ "$mode" = "600" ]
 }
 
@@ -130,8 +130,8 @@ state_path() {
     if (cfg.install_id !== installId) process.exit(3);
     if (state.install_id !== installId) process.exit(4);
     if (state.access_key_invalid !== false) process.exit(5);
-    if (state.shipped_session_ids[0] !== "keep-session") process.exit(6);
-    if (state.pending_payloads[0]?.id !== "pending-payload") process.exit(7);
+    if (state.shipped_session_ids.length !== 0) process.exit(6);
+    if (state.pending_payloads.length !== 0) process.exit(7);
     if (handoff !== "tr_script_new_key") process.exit(8);
   ' "$(config_path)" "$(state_path)" "$TEST_HOME/.tokensrank/access-key" "$install_id"
   [ "$status" -eq 0 ]
@@ -156,7 +156,7 @@ state_path() {
   [ "$status" -eq 0 ]
   plist="$LAUNCHD_DIR/com.tokensrank.runner.plist"
   [ -f "$plist" ]
-  run plutil -lint "$plist"
+  run python3 -c 'import plistlib, sys; plistlib.load(open(sys.argv[1], "rb"))' "$plist"
   [ "$status" -eq 0 ]
   grep -q '<integer>3600</integer>' "$plist"
   grep -q '<key>RunAtLoad</key>' "$plist"

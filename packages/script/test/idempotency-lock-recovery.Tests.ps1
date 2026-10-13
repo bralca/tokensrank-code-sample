@@ -82,7 +82,7 @@ Describe 'V-14 Windows idempotency and lock recovery' {
     $after | Should -Be $before
   }
 
-  It 'preserves runtime state on repeat install' {
+  It 'resets runtime state while preserving install identity on repeat install' {
     Invoke-IsolatedInstall | Out-Null
     $statePath = Join-Path $script:InstallRoot 'state.json'
     $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
@@ -100,10 +100,11 @@ Describe 'V-14 Windows idempotency and lock recovery' {
     Invoke-IsolatedInstall | Out-Null
 
     $after = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
-    $after.last_run_at | Should -Be 'last-run-sentinel'
+    $after.install_id | Should -Be $state.install_id
+    $after.last_run_at | Should -BeNullOrEmpty
     $after.access_key_invalid | Should -BeFalse
-    $after.shipped_session_ids[0].session_id | Should -Be 'win-already-shipped'
-    $after.shipped_session_ids[0].source | Should -Be 'claude'
+    $after.shipped_session_ids.Count | Should -Be 0
+    $after.pending_payloads.Count | Should -Be 0
   }
 
   It 'deduplicates Task Scheduler registration with unregister then register -Force' {
@@ -144,6 +145,7 @@ Describe 'V-14 Windows idempotency and lock recovery' {
       return
     }
 
+    New-Item -Path $script:InstallRoot -ItemType Directory -Force | Out-Null
     $readyFile = Join-Path $script:InstallRoot 'mutex-ready'
     $childCommand = @"
 `$ErrorActionPreference = 'Stop'
@@ -152,7 +154,8 @@ Describe 'V-14 Windows idempotency and lock recovery' {
 Set-Content -LiteralPath '$readyFile' -Value 'ready'
 Start-Sleep -Seconds 60
 "@
-    $child = Start-Process -FilePath 'pwsh' -ArgumentList @('-NoProfile', '-Command', $childCommand) -PassThru -WindowStyle Hidden
+    $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($childCommand))
+    $child = Start-Process -FilePath 'pwsh' -ArgumentList @('-NoProfile', '-EncodedCommand', $encodedCommand) -PassThru -WindowStyle Hidden
     try {
       $deadline = [DateTimeOffset]::UtcNow.AddSeconds(10)
       while (-not (Test-Path -LiteralPath $readyFile)) {

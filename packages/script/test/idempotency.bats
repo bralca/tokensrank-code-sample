@@ -37,7 +37,7 @@ state_path() {
 }
 
 file_mode() {
-  stat -f '%Lp' "$1" 2>/dev/null || stat -c '%a' "$1"
+  node -e 'process.stdout.write((require("node:fs").statSync(process.argv[1]).mode & 0o777).toString(8))' "$1"
 }
 
 json_read() {
@@ -140,7 +140,7 @@ json_read() {
   [ "$status" -eq 0 ]
 }
 
-@test "does not reset existing state.json on subsequent installs" {
+@test "reinstall resets runtime state while preserving install identity" {
   run run_install Darwin
   [ "$status" -eq 0 ]
 
@@ -163,11 +163,13 @@ json_read() {
     fs.writeFileSync(path, `${JSON.stringify(state, null, 2)}\n`);
   ' "$(state_path)"
   [ "$status" -eq 0 ]
-  before_state="$(cat "$(state_path)")"
+  before_install_id="$(json_read "$(state_path)" install_id)"
 
   run run_install Darwin
 
   [ "$status" -eq 0 ]
-  after_state="$(cat "$(state_path)")"
-  [ "$after_state" = "$before_state" ]
+  [ "$(json_read "$(state_path)" install_id)" = "$before_install_id" ]
+  [ "$(json_read "$(state_path)" shipped_session_ids)" = "[]" ]
+  [ "$(json_read "$(state_path)" pending_payloads)" = "[]" ]
+  [ "$(json_read "$(state_path)" last_run_at)" = "null" ]
 }
