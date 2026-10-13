@@ -1,0 +1,19 @@
+[Unit]
+Description=TokensRank Session Sync Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=__TOKENSRANK_NODE__ __TOKENSRANK_HOME__/agent.mjs --scan-home
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tokensrank
+Environment=TOKENSRANK_HOME=__TOKENSRANK_HOME__
+Environment=TOKENSRANK_API_BASE=__TOKENSRANK_API_BASE__
+EnvironmentFile=-__TOKENSRANK_HOME__/config.json
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=default.target

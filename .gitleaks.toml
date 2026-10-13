@@ -1,0 +1,26 @@
+title = "TokensRank credential checks"
+
+[extend]
+useDefault = true
+
+# Supabase JWT keys can evade generic API-key heuristics. Never commit them.
+[[rules]]
+id = "embedded-jwt"
+description = "Embedded JWT credential"
+regex = '''\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b'''
+
+[[allowlists]]
+description = "SHA-1 suffix of the deliberately breached password fixture, not an API key"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''^apps/api/(src/routes/auth/__tests__/sign-up\.test\.ts|test/integration/password-reset-confirm\.test\.ts)$''']
+regexes = ['''pwnedPassword123Suffix = '[A-F0-9]{35}'\z''']
+
+[[allowlists]]
+description = "Destructured chart property names, not credential material"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "match"
+paths = ['''^apps/web/app/components/profile/chapters/ChapterJourney\.tsx$''']
+regexes = ['''dailyTokens90d, shippedLocPerDay90d\s*\z''']

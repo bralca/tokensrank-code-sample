@@ -1,0 +1,21 @@
+[api]
+enabled = true
+port = 54321
+schemas = [
+  "public",
+  "tokensrank_test_w0",
+  "tokensrank_test_w1",
+  "tokensrank_test_w2",
+  "tokensrank_test_w3",
+  "tokensrank_test_qc_verify",
+]
+extra_search_path = [
+  "public",
+  "extensions",
+  "tokensrank_test_w0",
+  "tokensrank_test_w1",
+  "tokensrank_test_w2",
+  "tokensrank_test_w3",
+  "tokensrank_test_qc_verify",
+]
+max_rows = 1000

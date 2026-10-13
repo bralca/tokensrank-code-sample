@@ -1,0 +1,19 @@
+{
+  "name": "@tokensrank/test-fixtures",
+  "version": "0.0.1",
+  "description": "Worker-aware Supabase test fixtures for TokensRank integration suites",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "typecheck": "pnpm run type-check"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.41.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "ecmaVersion": 2022,
+    "sourceType": "module"
+  },
+  "extends": [
+    "next/core-web-vitals"
+  ],
+  "ignorePatterns": [
+    ".next/**",
+    "node_modules/**",
+    "e2e/**",
+    ".eslintrc-custom-rules/__fixtures__/**"
+  ],
+  "plugins": [
+    "tokensrank"
+  ],
+  "rules": {
+    "@next/next/no-img-element": "off",
+    "@next/next/no-page-custom-font": "off",
+    "tokensrank/no-bare-avatar-img": "error"
+  }
+}

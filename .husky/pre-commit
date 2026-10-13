@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+set -eu
+
+changed_script_src="$(git diff --cached --name-only -- packages/script/src/ packages/script/bin/agent.mjs || true)"
+if [ -n "$changed_script_src" ]; then
+  pnpm --filter @tokensrank/script test:forbidden-keys
+fi
+
+pnpm exec lint-staged

@@ -1,0 +1,42 @@
+{
+	admin localhost:2019
+
+	log {
+		output stdout
+		format json
+	}
+}
+
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "DENY"
+		X-XSS-Protection "1; mode=block"
+	}
+}
+
+www.tokensrank.ai {
+	redir https://tokensrank.ai{uri} permanent
+}
+
+tokensrank.ai {
+	import security_headers
+
+	reverse_proxy localhost:3000 {
+		header_up X-Forwarded-Proto https
+		header_up X-Forwarded-Host tokensrank.ai
+		header_up X-Real-IP {http.request.remote.host}
+	}
+}
+
+api.tokensrank.ai {
+	import security_headers
+
+	reverse_proxy localhost:3001 {
+		header_up X-Forwarded-Proto https
+		header_up X-Forwarded-Host api.tokensrank.ai
+		header_up X-Real-IP {http.request.remote.host}
+	}
+}

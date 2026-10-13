@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.tokensrank.runner</string>
+
+  <!-- FR-79: run once per hour. -->
+  <key>StartInterval</key>
+  <integer>3600</integer>
+
+  <!-- FR-80: catch up by running when launchd loads the job at login. -->
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>__TOKENSRANK_NODE__</string>
+    <string>__TOKENSRANK_HOME__/agent.mjs</string>
+    <string>--scan-home</string>
+  </array>
+
+  <key>StandardOutPath</key>
+  <string>__TOKENSRANK_HOME__/logs/tokensrank.log</string>
+  <key>StandardErrorPath</key>
+  <string>__TOKENSRANK_HOME__/logs/tokensrank.err.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>TOKENSRANK_HOME</key>
+    <string>__TOKENSRANK_HOME__</string>
+    <key>TOKENSRANK_API_BASE</key>
+    <string>__TOKENSRANK_API_BASE__</string>
+  </dict>
+
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>LowPriorityIO</key>
+  <true/>
+  <key>Nice</key>
+  <integer>10</integer>
+</dict>
+</plist>

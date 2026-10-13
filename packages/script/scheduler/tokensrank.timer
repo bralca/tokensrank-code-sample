@@ -1,0 +1,21 @@
+[Unit]
+Description=TokensRank Hourly Sync Timer
+Requires=tokensrank.service
+
+[Timer]
+# FR-79: run one hour after the previous activation.
+OnUnitActiveSec=1h
+
+# FR-80: remember missed activations across downtime and catch up on boot.
+Persistent=true
+
+# FR-80: fire shortly after boot so laptops catch up after sleep/reboot.
+OnBootSec=2min
+
+# FR-81: spread API load across Linux installs.
+RandomizedDelaySec=5min
+
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

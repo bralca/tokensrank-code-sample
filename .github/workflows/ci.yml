@@ -1,0 +1,491 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22.23.3'
+  PNPM_VERSION: '10.27.0'
+  NEXT_PUBLIC_API_BASE: http://localhost:3001
+  NEXT_PUBLIC_SITE_URL: http://localhost:3000
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run lint
+        run: pnpm lint
+
+      - name: Audit production dependencies
+        run: pnpm audit --prod
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run typecheck
+        run: pnpm typecheck
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, privacy]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build API app
+        run: pnpm --filter @tokensrank/api build
+
+      - name: Build web app
+        run: pnpm --filter @tokensrank/web build
+
+      - name: Audit web bundle for secret leaks
+        run: |
+          # NFR-9: fail CI if service-role or provider secret patterns reach the frontend bundle.
+          cd apps/web && npm run audit:bundle
+
+  privacy:
+    name: Privacy Boundary
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # NFR-19: this job is gated by lint/typecheck and runs before build/test jobs,
+      # so privacy regressions fail CI before trusted artifacts are produced.
+      - name: Scan source for embedded credentials
+        run: pnpm check:secrets
+
+      - name: Run TypeScript privacy check
+        run: pnpm privacy:check
+
+      - name: Install bats for forbidden-keys test
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Run forbidden-keys Bats test
+        if: runner.os == 'Linux'
+        run: bats packages/script/test/forbidden-keys.bats
+
+  unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Caddy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y caddy
+
+      - name: Run root validation tests
+        run: pnpm test:unit
+
+      - name: Run unit tests
+        run: pnpm -r run test:unit
+
+      - name: Install local browser test runtime
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Test local dashboard with synthetic data
+        run: pnpm test:local:browser
+
+  publishing-local:
+    name: Publishing with isolated PostgreSQL
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install local database test tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql
+          curl -fsSL https://github.com/PostgREST/postgrest/releases/download/v16.3/postgrest-v16.3-linux-static-x86-64.tar.xz -o "$RUNNER_TEMP/postgrest.tar.xz"
+          tar -xf "$RUNNER_TEMP/postgrest.tar.xz" -C "$RUNNER_TEMP"
+      - name: Verify publishing without hosted credentials
+        run: TOKENSRANK_POSTGRES_BIN="$(pg_config --bindir)" TOKENSRANK_POSTGREST_BIN="$RUNNER_TEMP/postgrest" pnpm test:publish:local
+
+  integration:
+    name: Integration Tests
+    # Hosted tests create accounts: opt in only with dedicated test credentials.
+    if: vars.TOKENSRANK_HOSTED_TESTS == 'true'
+    runs-on: ubuntu-latest
+    needs: unit
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run integration tests
+        run: pnpm --filter @tokensrank/api test:integration
+
+  performance-acceptance:
+    name: Performance Acceptance (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    needs: integration
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: api-web
+            os: ubuntu-latest
+          - target: script-posix
+            os: ubuntu-latest
+          - target: script-posix-macos
+            os: macos-latest
+          - target: script-windows
+            os: windows-latest
+    env:
+      ADMIN_PURGE_TOKEN: ${{ secrets.ADMIN_PURGE_TOKEN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      PLAYWRIGHT_API_PORT: '3001'
+      PLAYWRIGHT_WEB_PORT: '3000'
+      SUPABASE_SCHEMA: tokensrank_test_w0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install bats (Ubuntu)
+        if: matrix.target == 'script-posix'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Install bats (macOS)
+        if: matrix.target == 'script-posix-macos'
+        run: brew install bats-core
+
+      - name: Install Playwright browsers
+        if: matrix.target == 'api-web'
+        run: pnpm --filter @tokensrank/web exec playwright install --with-deps chromium webkit
+
+      - name: Run API performance and state lifecycle specs
+        if: matrix.target == 'api-web'
+        timeout-minutes: 12
+        run: |
+          pnpm --filter @tokensrank/api exec vitest run --config vitest.integration.config.ts \
+            test/integration/performance-profile.spec.ts \
+            test/integration/performance-ingestion.spec.ts \
+            test/integration/state-lifecycle.spec.ts
+
+      - name: Start API server for leaderboard performance
+        if: matrix.target == 'api-web'
+        timeout-minutes: 3
+        run: |
+          pnpm --filter @tokensrank/api exec cross-env \
+            NODE_ENV=test \
+            START_FASTIFY=true \
+            PORT=3001 \
+            ALLOWED_ORIGINS=http://127.0.0.1:3000,http://localhost:3000 \
+            SUPABASE_SCHEMA=tokensrank_test_w0 \
+            tsx src/server.ts > /tmp/tokensrank-api.log 2>&1 &
+          echo $! > /tmp/tokensrank-api.pid
+          for attempt in {1..60}; do
+            if curl -fsS http://127.0.0.1:3001/health > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/tokensrank-api.log
+          exit 1
+
+      - name: Run leaderboard autocannon acceptance
+        if: matrix.target == 'api-web'
+        timeout-minutes: 6
+        env:
+          PERF_API_BASE_URL: http://127.0.0.1:3001
+          PERF_ALLOWED_ORIGIN: http://127.0.0.1:3000
+        run: pnpm exec tsx scripts/perf/leaderboard.ts
+
+      - name: Stop API server
+        if: matrix.target == 'api-web' && always()
+        run: |
+          if [ -f /tmp/tokensrank-api.pid ]; then
+            kill "$(cat /tmp/tokensrank-api.pid)" || true
+          fi
+        shell: bash
+
+      - name: Run web performance and visibility E2E specs
+        if: matrix.target == 'api-web'
+        timeout-minutes: 15
+        run: |
+          pnpm --filter @tokensrank/web exec playwright test \
+            e2e/performance-profile.spec.ts \
+            e2e/performance-og.spec.ts \
+            e2e/visibility-auth.spec.ts \
+            --workers=1
+
+      - name: Run POSIX script performance
+        if: matrix.target == 'script-posix' || matrix.target == 'script-posix-macos'
+        timeout-minutes: 5
+        run: bats packages/script/test/performance.bats
+
+      - name: Run Windows script performance
+        if: matrix.target == 'script-windows'
+        timeout-minutes: 5
+        shell: pwsh
+        run: pnpm --filter @tokensrank/script exec pwsh -NoProfile -Command "Invoke-Pester -Path test/performance.Tests.ps1 -CI"
+
+      - name: Upload performance artifacts
+        if: matrix.target == 'api-web' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-acceptance-${{ matrix.target }}
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+            /tmp/tokensrank-api.log
+          if-no-files-found: ignore
+
+  e2e:
+    name: E2E Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: performance-acceptance
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      ADMIN_PURGE_TOKEN: ${{ secrets.ADMIN_PURGE_TOKEN }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers (Linux)
+        if: runner.os == 'Linux'
+        run: pnpm --filter @tokensrank/web exec playwright install --with-deps chromium webkit
+
+      - name: Install Playwright browsers (macOS)
+        if: runner.os == 'macOS'
+        run: pnpm --filter @tokensrank/web exec playwright install chromium webkit
+
+      - name: Run deployment smoke E2E
+        run: pnpm --filter @tokensrank/web exec playwright test e2e/regression/deployment-smoke.spec.ts --project=chromium --workers=1
+
+      - name: Run E2E tests
+        run: pnpm --filter @tokensrank/web test:e2e
+
+  script-tests:
+    name: Script Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install bats (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Install bats (macOS)
+        if: runner.os == 'macOS'
+        run: brew install bats-core
+
+      - name: Run POSIX script tests
+        if: runner.os != 'Windows'
+        run: pnpm --filter @tokensrank/script test:posix
+
+      - name: Run script privacy payload audit
+        if: runner.os != 'Windows'
+        run: pnpm --filter @tokensrank/script test:privacy
+
+      - name: Run Windows script tests
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: pnpm --filter @tokensrank/script test:windows
+
+      - name: Upload script test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: script-test-results-${{ matrix.os }}
+          path: |
+            packages/script/testResults.xml
+            packages/script/TestResults
+          if-no-files-found: ignore

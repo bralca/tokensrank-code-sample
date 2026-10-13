@@ -1,0 +1,31 @@
+{
+  "name": "@tokensrank/script",
+  "version": "0.0.1",
+  "description": "TokensRank local usage collection script",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "pnpm run test:unit",
+    "test:unit": "vitest run --passWithNoTests",
+    "test:bats": "pnpm run test:posix",
+    "test:posix": "bats test/*.bats",
+    "test:privacy": "vitest run test/privacy.test.ts",
+    "test:forbidden-keys": "bats test/forbidden-keys.bats",
+    "test:pester": "pnpm run test:windows",
+    "test:windows": "pwsh -NoProfile -Command \"Invoke-Pester -Path test,src/runtime -CI\"",
+    "privacy:check": "tsx ../../scripts/check-script-privacy.ts bin/agent.mjs",
+    "privacy:test": "bats test/forbidden-keys.bats",
+    "privacy:check-all": "pnpm privacy:check && pnpm privacy:test",
+    "type-check": "tsc --noEmit",
+    "typecheck": "pnpm run type-check"
+  },
+  "dependencies": {
+    "@tokensrank/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "bats": "^1.13.0",
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.4"
+  }
+}

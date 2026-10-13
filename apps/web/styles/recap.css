@@ -1,0 +1,116 @@
+/* Private overview first; historical exploration remains a separate, quieter section. */
+.usage-recap { margin: 0 0 24px; font-size: var(--dash-font-unit); }
+.recap-heading, .recap-card-heading, .recap-presence-header, .recap-history-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.recap-heading { margin-bottom: 18px; }
+.recap-heading > span { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: .82em; }
+.recap-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 24px; }
+.recap-week { padding: 26px 28px 0; border-radius: 22px; background: #fff0e8; border: 1px solid #f6e1d5; min-width: 0; }
+.recap-card-heading h3 { font-size: 1em; letter-spacing: -.2px; }
+.recap-card-heading > span { font-size: .78em; color: #766052; }
+.recap-week-body { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1fr); gap: 18px; align-items: center; padding: 26px 0; }
+.recap-total > strong { display: block; font-size: clamp(42px, 3.4vw, 70px); letter-spacing: -2.5px; line-height: 1.1; font-weight: 750; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+.recap-total > span { display: block; color: #766052; margin-top: 6px; font-size: .85em; }
+.recap-change { margin-top: 20px; font-size: .87em; }
+.recap-change b { display: block; font-weight: 650; }
+.recap-change span { color: #766052; display: block; font-size: .92em; margin-top: 3px; }
+.recap-comparison-note { margin-top: 18px; max-width: 24ch; color: #766052; font-size: .82em; line-height: 1.6; }
+.recap-chart { min-width: 0; }
+.recap-bars { display: flex; align-items: end; gap: 8px; height: 156px; }
+.recap-bar-day { flex: 1; min-width: 0; height: 100%; text-align: center; }
+.recap-bar-pair { display: flex; justify-content: center; align-items: end; gap: 4px; height: calc(100% - 28px); border-bottom: 1px solid #e7c6b5; }
+.recap-bar-pair i { width: 36%; max-width: 23px; border-radius: 4px 4px 0 0; }
+.recap-bar-prior { background: #d9b6a2; }
+.recap-bar-current { background: var(--accent); }
+.recap-bar-day > span { display: block; font-size: .68em; color: #766052; padding-top: 8px; }
+.recap-legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 14px; font-size: .66em; color: #766052; }
+.recap-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.recap-legend i { width: 7px; height: 7px; border-radius: 2px; background: var(--accent); }
+.recap-legend span + span i { background: #d9b6a2; }
+.recap-week-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 20px; border-top: 1px solid #ebd4c6; padding: 18px 0; color: #766052; font-size: .78em; }
+.recap-week-footer strong { color: var(--ink); font-weight: 650; }
+.recap-daily-details { margin-left: auto; position: relative; }
+.recap-daily-details summary { cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
+.recap-daily-details > div { position: absolute; z-index: 3; right: 0; top: calc(100% + 10px); padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--page); box-shadow: 0 8px 28px #55311b12; width: max-content; max-width: min(540px, 85vw); overflow-x: auto; }
+.recap-daily-details table { font-size: 12px; color: var(--ink); font-variant-numeric: tabular-nums; border-collapse: collapse; }
+.recap-daily-details caption { text-align: left; padding-bottom: 10px; }
+.recap-daily-details td, .recap-daily-details th { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.recap-daily-details td:first-child, .recap-daily-details th:first-child { text-align: left; padding-left: 0; }
+.recap-models { border: 1px solid var(--line); border-radius: 22px; padding: 26px 28px; min-width: 0; }
+.recap-models > p { font-size: .8em; color: var(--muted); margin-top: 5px; }
+.recap-models ol { list-style: none; margin: 24px 0 16px; padding: 0; display: grid; gap: 21px; }
+.recap-model-label { display: flex; gap: 12px; justify-content: space-between; font-size: .9em; font-weight: 600; }
+.recap-model-label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recap-model-label strong { font-variant-numeric: tabular-nums; }
+.recap-model-meter { height: 5px; border-radius: 4px; background: var(--surface-muted); margin: 10px 0; position: relative; }
+.recap-model-meter span { display: block; background: var(--accent); height: 100%; border-radius: inherit; }
+.recap-models li:nth-child(2) .recap-model-meter span { background: #a87556; }
+.recap-models li:nth-child(3) .recap-model-meter span { background: #bca697; }
+.recap-model-meter i { position: absolute; width: 2px; top: -3px; height: 11px; border-radius: 1px; transform: translateX(-1px); background: var(--ink); }
+.recap-model-meta { display: flex; justify-content: space-between; gap: 10px; font-size: .72em; color: var(--muted); }
+.recap-models > small { display: block; color: var(--muted); font-size: .69em; line-height: 1.6; }
+.recap-empty { color: var(--muted); line-height: 1.6; padding-block: 24px; font-size: .85em; }
+.recap-scope { margin: 12px 2px 24px; color: var(--muted); font-size: .72em; line-height: 1.6; }
+.recap-presence { border: 1px solid var(--line); border-radius: 20px; overflow: hidden; }
+.recap-presence-header { padding: 19px 26px; border-bottom: 1px solid var(--line); }
+.recap-presence-header h2 { display: flex; align-items: center; gap: 10px; font-size: 1em; }
+.recap-presence-header > a { display: flex; align-items: center; gap: 4px; color: var(--accent-ink); font-size: .85em; font-weight: 600; }
+.recap-presence-header > span { color: var(--muted); font-size: .78em; }
+.recap-presence-body { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); }
+.recap-positions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 22px 26px 16px; gap: 14px 22px; }
+.recap-position { display: flex; flex-direction: column; min-width: 0; }
+.recap-position > span { display: flex; align-items: center; gap: 5px; font-size: .79em; color: var(--muted); }
+.recap-position > span svg { flex-shrink: 0; }
+.recap-position strong { font-size: 2em; font-weight: 750; letter-spacing: -1px; line-height: 1.3; margin: 5px 0; }
+a.recap-position:hover strong { color: var(--accent-ink); }
+.recap-position small { font-size: .74em; color: var(--muted); }
+.recap-rank-note { grid-column: 1 / -1; font-size: .71em; color: var(--muted); }
+.recap-receipt { border-left: 1px solid var(--line); padding: 22px 26px 18px; background: #f8f5f1; }
+.recap-receipt > div { display: flex; align-items: baseline; justify-content: space-between; gap: 15px; font-size: .82em; margin-bottom: 6px; }
+.recap-receipt > div span { color: var(--muted); }
+.recap-receipt > div strong { font-variant-numeric: tabular-nums; font-weight: 650; font-size: 1.18em; }
+.recap-receipt > p { font-size: .72em; line-height: 1.6; color: var(--muted); margin-top: 11px; }
+.recap-receipt > p b { font-weight: 600; color: var(--ink); }
+.recap-receipt > p span { display: block; }
+.recap-receipt .dash-text-button { margin-top: 10px; font-size: .78em; }
+.recap-presence-footer { border-top: 1px solid var(--line); padding: 12px 26px; font-size: .71em; color: var(--muted); }
+.recap-presence-empty { display: flex; justify-content: space-between; align-items: center; gap: 25px; padding: 24px 26px; }
+.recap-presence-empty strong { font-size: .95em; font-weight: 650; }
+.recap-presence-empty p { margin-top: 5px; font-size: .8em; color: var(--muted); }
+.recap-presence-empty .dash-button { flex-shrink: 0; }
+.recap-history-link { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: .8em; margin-top: 24px; color: var(--muted); }
+.recap-history-link:hover { color: var(--accent-ink); }
+.recap-history-heading { border-top: 1px solid var(--line); padding-top: 34px; margin-bottom: 20px; scroll-margin-top: 24px; }
+.recap-history-heading > span { font-size: 13px; color: var(--muted); }
+
+@media (max-width: 1050px) {
+  .recap-grid { gap: 16px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+  .recap-week, .recap-models { padding-inline: 20px; }
+  .recap-card-heading { align-items: flex-start; }
+  .recap-week .recap-card-heading { flex-direction: column; gap: 4px; }
+  .recap-week-body { gap: 12px; }
+  .recap-model-meta { flex-wrap: wrap; gap: 3px; }
+  .recap-week-footer { gap: 10px 14px; }
+  .recap-daily-details { margin-left: 0; }
+  .recap-daily-details > div { left: 0; right: auto; }
+  .recap-presence-body { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+}
+@media (max-width: 740px) {
+  .recap-heading { align-items: flex-start; flex-direction: column; gap: 5px; }
+  .recap-grid, .recap-presence-body { grid-template-columns: 1fr; }
+  .recap-week-body { grid-template-columns: minmax(0, .8fr) minmax(0, 1fr); padding-block: 24px; }
+  .recap-total > strong { font-size: 46px; }
+  .recap-week, .recap-models { padding: 22px 20px; }
+  .recap-week { padding-bottom: 0; }
+  .recap-models ol { gap: 22px; }
+  .recap-model-meta { font-size: .76em; }
+  .recap-receipt { border-left: 0; border-top: 1px solid var(--line); }
+  .recap-presence-empty { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .recap-presence-header, .recap-positions, .recap-receipt, .recap-presence-footer, .recap-presence-empty { padding-inline: 20px; }
+  .recap-position strong { font-size: 1.8em; }
+  .recap-position > span { font-size: .75em; }
+  .recap-positions { gap: 16px 12px; }
+  .recap-history-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .recap-bars { gap: 4px; height: 146px; }
+  .recap-bar-pair { gap: 2px; }
+  .recap-legend { font-size: .63em; gap: 5px; }
+}

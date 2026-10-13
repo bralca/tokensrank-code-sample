@@ -1,0 +1,26 @@
+{
+  "name": "@tokensrank/local-core",
+  "version": "0.0.1",
+  "description": "Local-first TokensRank ingestion, SQLite storage, pricing, and profile rollups",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run --passWithNoTests",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tokensrank/shared": "workspace:*",
+    "better-sqlite3": "^11.8.1",
+    "ccusage": "20.0.6",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.4"
+  }
+}

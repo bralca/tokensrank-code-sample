@@ -1,0 +1,3 @@
+{
+  "packages/script/bin/agent.mjs": "pnpm exec tsx scripts/check-script-privacy.ts"
+}

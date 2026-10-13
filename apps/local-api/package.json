@@ -1,0 +1,28 @@
+{
+  "name": "@tokensrank/local-api",
+  "version": "0.0.1",
+  "description": "TokensRank local-first API",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:local": "tsx watch src/server.ts",
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "typecheck": "pnpm run type-check",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "@tokensrank/local-core": "workspace:*",
+    "@tokensrank/shared": "workspace:*",
+    "dotenv": "^17.4.2",
+    "fastify": "^5.12.5",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.4"
+  }
+}

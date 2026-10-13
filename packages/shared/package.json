@@ -1,0 +1,23 @@
+{
+  "name": "@tokensrank/shared",
+  "version": "0.0.1",
+  "description": "TokensRank shared schemas and types",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "pnpm run test:unit",
+    "test:unit": "vitest run --passWithNoTests",
+    "type-check": "tsc --noEmit",
+    "typecheck": "pnpm run type-check"
+  },
+  "dependencies": {
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.4"
+  }
+}

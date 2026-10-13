@@ -1,0 +1,17 @@
+{
+  "name": "tokensrank-local",
+  "version": "0.0.1",
+  "description": "TokensRank local-first app launcher",
+  "type": "module",
+  "bin": {
+    "tokensrank-local": "bin/tokensrank-local.mjs"
+  },
+  "scripts": {
+    "build": "node bin/tokensrank-local.mjs --version >/dev/null",
+    "type-check": "node bin/tokensrank-local.mjs --version >/dev/null",
+    "test": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4"
+  }
+}
