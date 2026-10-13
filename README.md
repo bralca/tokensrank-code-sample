@@ -33,7 +33,7 @@ Use **Node.js 22** (tested with 22.23.3) and **pnpm 10.27.0**. The Node version 
 ```sh
 git clone https://github.com/bralca/tokensrank-code-sample.git
 cd tokensrank-code-sample
-nvm use                 # if you use nvm
+nvm install             # if you use nvm; installs the pinned version
 corepack enable
 pnpm install --frozen-lockfile
 cp .env.local.example .env.local
